@@ -31,10 +31,10 @@ import java.util.List;
 
 public class PokedexAdapter extends RecyclerView.Adapter<PokedexAdapter.PokedexViewHolder> implements Filterable {
 
-    List<Pokemon> filtered;
+
     @Override
     public Filter getFilter() {
-        return newPokemonFilter();
+        return new PokemonFilter();
     }
 
     public static class PokedexViewHolder extends RecyclerView.ViewHolder {
@@ -68,39 +68,42 @@ public class PokedexAdapter extends RecyclerView.Adapter<PokedexAdapter.PokedexV
         loadPokemon();
     }
 
+
+    public List<Pokemon> filtered = new ArrayList<>();
+    public List<Pokemon> filteredPokemon = new ArrayList<>();
+
+
+
+
     private class PokemonFilter extends Filter {
-
-        List<Pokemon> filteredPokemon = new ArrayList<>();
-
 
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
 
-            constraint = constraint.toString().toLowerCase();
+            String input = constraint.toString().toLowerCase();
             //iterate pokemon and compare
-            FilterResults results = new FilterResults();
 
 
-            try {
+            if (input.isEmpty()) {
+                filteredPokemon = pokemon;
 
-                if (constraint != null && constraint.toString().length() > 0) {
-                    for (Pokemon poke : pokemon) {
-                        if (poke.getName().toLowerCase().equals(constraint)) {
-                            filteredPokemon.add(poke);
-                        } else {
-                            Log.d("filteredPokemon", "error in getting the results");
-                        }
+            } else {
+                List<Pokemon> filteredList = new ArrayList<>();
+                for (Pokemon poke : pokemon) {
+                    Log.d("pokeIterate", "iterating pokemonList");
+                    if (poke.getName().toLowerCase().contains(input)) {
+                        Log.d("pokeIterate", "cant compare");
+                        filteredList.add(poke);
+                        Log.d("pokeIterate", "cant add(poke)");
                     }
 
-                    results.values = filteredPokemon;
-                    results.count = filteredPokemon.size();
-
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                filteredPokemon = filteredList;
             }
 
-
+            FilterResults results = new FilterResults();
+            results.values = filteredPokemon;
+            results.count = filteredPokemon.size();
             return results;
         }
 
@@ -110,6 +113,7 @@ public class PokedexAdapter extends RecyclerView.Adapter<PokedexAdapter.PokedexV
             notifyDataSetChanged();
         }
     }
+
 
     public void loadPokemon() {
         String url = "https://pokeapi.co/api/v2/pokemon?limit=151";
@@ -133,6 +137,7 @@ public class PokedexAdapter extends RecyclerView.Adapter<PokedexAdapter.PokedexV
                 }
             }
         }, new Response.ErrorListener() {
+
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e("cs50", "Pokemon list error", error);
@@ -153,13 +158,17 @@ public class PokedexAdapter extends RecyclerView.Adapter<PokedexAdapter.PokedexV
 
     @Override
     public void onBindViewHolder(@NonNull PokedexViewHolder holder, int position) {
-        Pokemon current = filtered.get(position);
-        holder.textView.setText(current.getName());
-        holder.containerView.setTag(current);
+
+            Pokemon current = filtered.get(position);
+            holder.textView.setText(current.getName());
+            holder.containerView.setTag(current);
+            Log.d("onBindViewHolder", "filtered is not null");
+
     }
 
     @Override
     public int getItemCount() {
         return filtered.size();
+
     }
 }

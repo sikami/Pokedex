@@ -2,8 +2,11 @@ package edu.harvard.cs50.pokedex;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -16,6 +19,8 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 public class PokemonActivity extends AppCompatActivity {
     private TextView nameTextView;
@@ -38,6 +43,13 @@ public class PokemonActivity extends AppCompatActivity {
         type2TextView = findViewById(R.id.pokemon_type2);
 
         load();
+
+        buttonCatch = findViewById(R.id.catchButton);
+
+        sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
+
+
+
     }
 
     public void load() {
@@ -49,6 +61,7 @@ public class PokemonActivity extends AppCompatActivity {
             public void onResponse(JSONObject response) {
                 try {
                     nameTextView.setText(response.getString("name"));
+                    savedPokemon = response.getString("name");
                     numberTextView.setText(String.format("#%03d", response.getInt("id")));
 
                     JSONArray typeEntries = response.getJSONArray("types");
@@ -77,4 +90,47 @@ public class PokemonActivity extends AppCompatActivity {
 
         requestQueue.add(request);
     }
+
+
+    private static final String SHARED_PREF = "Sharedprefs";
+    private String savedPokemon;
+    boolean catchPoke;
+    private Button buttonCatch;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+
+
+
+    private static final String POKECATCH = "pokeIsCaught";
+    private ArrayList<String> savedList = new ArrayList<>();
+
+    public void toggleCatch (View view) {
+            if (!catchPoke) {
+                buttonCatch.setText("Release");
+                Log.d("catch2", "catchpoke : " + catchPoke);
+                savedList.add(savedPokemon);
+                catchPoke = true;
+            }
+            else {
+                buttonCatch.setText("Catch");
+                savedList.remove(savedPokemon);
+                Log.d("catch2", "catchpoke : " + catchPoke);
+                catchPoke = false;
+            }
+
+
+        sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        editor.putString(POKECATCH, savedPokemon);
+        editor.apply();
+
+    }
+
+
 }
+
+
+
+
+
+
