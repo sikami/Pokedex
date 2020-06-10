@@ -3,10 +3,15 @@ package edu.harvard.cs50.pokedex;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.Image;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -20,7 +25,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PokemonActivity extends AppCompatActivity {
     private TextView nameTextView;
@@ -29,6 +38,9 @@ public class PokemonActivity extends AppCompatActivity {
     private TextView type2TextView;
     private String url;
     private RequestQueue requestQueue;
+    private String urlImages;
+    private ArrayList<String> urlimage;
+    private ImageView image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,20 +53,23 @@ public class PokemonActivity extends AppCompatActivity {
         numberTextView = findViewById(R.id.pokemon_number);
         type1TextView = findViewById(R.id.pokemon_type1);
         type2TextView = findViewById(R.id.pokemon_type2);
-
-        load();
-
+        image = findViewById(R.id.imageView);
         buttonCatch = findViewById(R.id.catchButton);
 
+        //image.setImageBitmap();
+        load();
+        Log.d("urlimagesnew","url: " + urlImages);
+
+        Log.d("url", "url: " + urlimage);
+
         sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
-
-
 
     }
 
     public void load() {
         type1TextView.setText("");
         type2TextView.setText("");
+        image.setImageBitmap(null);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
@@ -63,6 +78,12 @@ public class PokemonActivity extends AppCompatActivity {
                     nameTextView.setText(response.getString("name"));
                     savedPokemon = response.getString("name");
                     numberTextView.setText(String.format("#%03d", response.getInt("id")));
+
+                    urlImages = response.getJSONObject("sprites").getString("front_default");
+
+                    DownloadSpriteTask downloadSpriteTask = new DownloadSpriteTask();
+                    downloadSpriteTask.execute(urlImages);
+
 
                     JSONArray typeEntries = response.getJSONArray("types");
                     for (int i = 0; i < typeEntries.length(); i++) {
@@ -92,6 +113,29 @@ public class PokemonActivity extends AppCompatActivity {
     }
 
 
+    //for images
+
+
+    private class DownloadSpriteTask extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... strings) {
+            try {
+                URL url = new URL(strings[0]);
+                return BitmapFactory.decodeStream(url.openStream());
+            } catch (IOException e) {
+                Log.e("cs50", "Download sprite error", e);
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+
+            image.setImageBitmap(bitmap);
+        }
+    }
+
     private static final String SHARED_PREF = "Sharedprefs";
     private String savedPokemon;
     boolean catchPoke;
@@ -102,7 +146,7 @@ public class PokemonActivity extends AppCompatActivity {
 
 
     private static final String POKECATCH = "pokeIsCaught";
-    private ArrayList<String> savedList = new ArrayList<>();
+    private Set<String> savedList = new HashSet<>();
 
     public void toggleCatch (View view) {
             if (!catchPoke) {
