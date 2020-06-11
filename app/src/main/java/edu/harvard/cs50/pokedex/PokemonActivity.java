@@ -36,10 +36,12 @@ public class PokemonActivity extends AppCompatActivity {
     private TextView numberTextView;
     private TextView type1TextView;
     private TextView type2TextView;
+    private TextView pokeTexts;
     private String url;
+    private String urlText;
+    private int index;
     private RequestQueue requestQueue;
     private String urlImages;
-    private ArrayList<String> urlimage;
     private ImageView image;
 
     @Override
@@ -49,22 +51,59 @@ public class PokemonActivity extends AppCompatActivity {
 
         requestQueue = Volley.newRequestQueue(getApplicationContext());
         url = getIntent().getStringExtra("url");
+
         nameTextView = findViewById(R.id.pokemon_name);
         numberTextView = findViewById(R.id.pokemon_number);
         type1TextView = findViewById(R.id.pokemon_type1);
         type2TextView = findViewById(R.id.pokemon_type2);
         image = findViewById(R.id.imageView);
         buttonCatch = findViewById(R.id.catchButton);
+        pokeTexts = findViewById(R.id.pokeText);
 
-        //image.setImageBitmap();
         load();
-        Log.d("urlimagesnew","url: " + urlImages);
-
-        Log.d("url", "url: " + urlimage);
+        pokeFlavorText();
 
         sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
 
     }
+
+    public void pokeFlavorText() {
+        pokeTexts.setText("");
+        Log.d("id", "url: " + url);
+
+        String[] splitting = url.split("/");
+        String index = splitting[6];
+        urlText = "https://pokeapi.co/api/v2/pokemon-species/" + index;
+        Log.d("id", "urlText: " + urlText);
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, urlText, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+
+                    JSONArray flavorsText = response.getJSONArray("flavor_text_entries");
+
+                    JSONObject flavors = flavorsText.getJSONObject(0);
+                    String flav = flavors.getString("flavor_text");
+                    pokeTexts.setText(flav);
+                }
+                catch (JSONException e) {
+                    Log.e("cs50", "cant download pokemontext");
+
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("cs50", "error downloading text");
+            }
+
+    });
+        requestQueue.add(req);
+
+    }
+
 
     public void load() {
         type1TextView.setText("");
@@ -78,6 +117,7 @@ public class PokemonActivity extends AppCompatActivity {
                     nameTextView.setText(response.getString("name"));
                     savedPokemon = response.getString("name");
                     numberTextView.setText(String.format("#%03d", response.getInt("id")));
+
 
                     urlImages = response.getJSONObject("sprites").getString("front_default");
 
@@ -110,6 +150,7 @@ public class PokemonActivity extends AppCompatActivity {
         });
 
         requestQueue.add(request);
+
     }
 
 
@@ -149,6 +190,8 @@ public class PokemonActivity extends AppCompatActivity {
     private Set<String> savedList = new HashSet<>();
 
     public void toggleCatch (View view) {
+        sharedPreferences = getSharedPreferences(SHARED_PREF,MODE_PRIVATE);
+
             if (!catchPoke) {
                 buttonCatch.setText("Release");
                 Log.d("catch2", "catchpoke : " + catchPoke);
