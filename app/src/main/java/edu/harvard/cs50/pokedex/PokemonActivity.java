@@ -20,12 +20,15 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -59,11 +62,24 @@ public class PokemonActivity extends AppCompatActivity {
         image = findViewById(R.id.imageView);
         buttonCatch = findViewById(R.id.catchButton);
         pokeTexts = findViewById(R.id.pokeText);
+        savedList = new ArrayList<>();
 
+        loadData();
         load();
         pokeFlavorText();
 
-        sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
+        Log.d("savedlist", "save: " + savedList);
+
+        if (savedList.contains(savedPokemon)) {
+            catchPoke = true;
+            buttonCatch.setText("Release");
+        }
+        else {
+            catchPoke = false;
+            buttonCatch.setText("Catch");
+        }
+
+
 
     }
 
@@ -154,7 +170,7 @@ public class PokemonActivity extends AppCompatActivity {
     }
 
 
-    //for images
+
 
 
     private class DownloadSpriteTask extends AsyncTask<String, Void, Bitmap> {
@@ -181,38 +197,50 @@ public class PokemonActivity extends AppCompatActivity {
     private String savedPokemon;
     boolean catchPoke;
     private Button buttonCatch;
-    private SharedPreferences sharedPreferences;
-    private SharedPreferences.Editor editor;
-
-
-
     private static final String POKECATCH = "pokeIsCaught";
-    private Set<String> savedList = new HashSet<>();
+    private ArrayList<String> savedList;
 
     public void toggleCatch (View view) {
-        sharedPreferences = getSharedPreferences(SHARED_PREF,MODE_PRIVATE);
 
-            if (!catchPoke) {
-                buttonCatch.setText("Release");
-                Log.d("catch2", "catchpoke : " + catchPoke);
-                savedList.add(savedPokemon);
-                catchPoke = true;
-            }
-            else {
+            if (catchPoke) {
+                catchPoke = false;
                 buttonCatch.setText("Catch");
                 savedList.remove(savedPokemon);
-                Log.d("catch2", "catchpoke : " + catchPoke);
-                catchPoke = false;
+
+            }
+            else {
+                catchPoke = true;
+                buttonCatch.setText("Release");
+                savedList.add(savedPokemon);
+
             }
 
+            saveData();
+    }
 
-        sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
-        editor = sharedPreferences.edit();
-        editor.putString(POKECATCH, savedPokemon);
-        editor.apply();
+    private void saveData() {
+
+
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREF,MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(savedList);
+        editor.putString("pokecatch", json).apply();
 
     }
 
+    private void loadData() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREF, MODE_PRIVATE);
+        Gson gson = new Gson();
+        String json = sharedPreferences.getString("pokecatch", null);
+        Type type = new TypeToken<ArrayList<String>>() {}.getType();
+        savedList = gson.fromJson(json, type);
+
+        if (savedList == null) {
+            savedList = new ArrayList<>();
+        }
+
+    }
 
 }
 
